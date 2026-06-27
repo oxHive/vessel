@@ -30,11 +30,11 @@ impl VesselMcp {
         generation_id: String,
         #[tool(param)]
         outputs: Vec<tools::PlatformOutput>,
-    ) -> String {
+    ) -> Result<String, String> {
         let input = tools::VesselSaveInput { generation_id, outputs };
         match tools::vessel_save(&self.db, input).await {
-            Ok(msg) => msg,
-            Err(e) => format!("Error saving outputs: {e}"),
+            Ok(msg) => Ok(msg),
+            Err(e) => Err(format!("Error saving outputs: {e}")),
         }
     }
 }
