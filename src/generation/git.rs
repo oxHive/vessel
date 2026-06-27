@@ -109,6 +109,14 @@ fn read_changelog_section(repo_path: &str, tag: &str) -> Option<String> {
     let rest = &content[start..];
     // take until next ## heading
     let end = rest[3..].find("\n## ").map(|i| i + 3 + 1).unwrap_or(rest.len());
-    let excerpt = &rest[..end.min(1200)]; // cap at 1200 chars
+    let cap = 1200_usize;
+    let byte_end = end.min(rest.len()).min(
+        rest.char_indices()
+            .map(|(i, _)| i)
+            .filter(|&i| i <= cap)
+            .last()
+            .unwrap_or(0)
+    );
+    let excerpt = &rest[..byte_end];
     Some(excerpt.trim().to_string())
 }

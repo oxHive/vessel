@@ -16,6 +16,13 @@ pub async fn init(config: &VesselConfig) -> Result<Db> {
     std::fs::create_dir_all(path.parent().unwrap())?;
     let db = libsql::Builder::new_local(path).build().await?;
     let conn = db.connect()?;
+    conn.execute("PRAGMA foreign_keys = ON", ()).await?;
     schema::run_migrations(&conn).await?;
     Ok(Arc::new(db))
+}
+
+pub async fn connect(db: &Db) -> anyhow::Result<libsql::Connection> {
+    let conn = db.connect()?;
+    conn.execute("PRAGMA foreign_keys = ON", ()).await?;
+    Ok(conn)
 }

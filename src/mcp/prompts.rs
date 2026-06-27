@@ -20,7 +20,7 @@ pub async fn handle_vessel_generate(
 ) -> Result<String> {
     let args = args.unwrap_or_default();
     let repo_path = args.get("repo_path").cloned()
-        .unwrap_or_else(|| std::env::current_dir().unwrap().to_string_lossy().to_string());
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default().to_string_lossy().to_string());
     let tag = args.get("tag").cloned();
     let category = args.get("category").cloned().unwrap_or_else(|| "release".into());
     let context_notes = args.get("context_notes").cloned();
