@@ -1,6 +1,40 @@
 [package]
-name = "vessel"
+name = "oxvessel"
 version = "0.1.0"
 edition = "2024"
+description = "Developer release announcement tool"
+license = "MIT"
+
+[[bin]]
+name = "vessel"
+path = "src/main.rs"
+
+[lib]
+name = "vessel"
+path = "src/lib.rs"
 
 [dependencies]
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.7", features = ["macros"] }
+tower-http = { version = "0.5", features = ["fs", "cors", "trace"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+libsql = "0.6"
+rmcp = { version = "0.1", features = ["server", "transport-io"] }
+reqwest = { version = "0.12", features = ["json"] }
+git2 = "0.19"
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+clap = { version = "4", features = ["derive"] }
+dirs = "5"
+aes-gcm = "0.10"
+base64 = "0.22"
+rand = "0.8"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
