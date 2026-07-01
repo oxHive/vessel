@@ -1,7 +1,7 @@
 {
   "name": "vessel",
   "description": "Developer release announcement tool — generates platform-tailored release content from git/GitHub context. Provides /vessel-generate, /vessel-status, /vessel-revise, and /vessel-profile MCP prompts, plus a vessel_save tool.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": {
     "name": "oxGrad",
     "email": "dev@graditya.com"
