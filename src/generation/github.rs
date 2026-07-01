@@ -2,7 +2,7 @@ use anyhow::Result;
 use reqwest::{Client, header};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use aes_gcm::{Aes256Gcm, KeyInit, aead::{Aead, AeadCore, OsRng}};
+use aes_gcm::{Aes256Gcm, KeyInit, aead::{Aead, common::Generate}};
 use base64::{Engine as _, engine::general_purpose::STANDARD as B64};
 
 pub struct GitHubClient {
@@ -96,7 +96,7 @@ pub fn derive_encryption_key() -> [u8; 32] {
 /// Returns `(ciphertext_b64, nonce_b64)`.
 pub fn encrypt_token(token: &str, key: &[u8; 32]) -> Result<(String, String)> {
     let cipher = Aes256Gcm::new(key.into());
-    let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
+    let nonce = aes_gcm::Nonce::generate();
     let ciphertext = cipher.encrypt(&nonce, token.as_bytes())
         .map_err(|e| anyhow::anyhow!("encrypt error: {e}"))?;
     Ok((B64.encode(&ciphertext), B64.encode(&nonce)))
@@ -107,8 +107,8 @@ pub fn decrypt_token(ciphertext_b64: &str, nonce_b64: &str, key: &[u8; 32]) -> R
     let cipher = Aes256Gcm::new(key.into());
     let ciphertext = B64.decode(ciphertext_b64)?;
     let nonce_bytes = B64.decode(nonce_b64)?;
-    let nonce = aes_gcm::Nonce::from_slice(&nonce_bytes);
-    let plaintext = cipher.decrypt(nonce, ciphertext.as_ref())
+    let nonce = aes_gcm::Nonce::try_from(nonce_bytes.as_slice())?;
+    let plaintext = cipher.decrypt(&nonce, ciphertext.as_ref())
         .map_err(|e| anyhow::anyhow!("decrypt error: {e}"))?;
     Ok(String::from_utf8(plaintext)?)
 }

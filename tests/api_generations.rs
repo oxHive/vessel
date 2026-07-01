@@ -17,7 +17,7 @@ async fn test_app() -> TestServer {
     };
     let config = VesselConfig::default();
     let app = api::router(db, config);
-    TestServer::new(app).unwrap()
+    TestServer::new(app)
 }
 
 #[tokio::test]

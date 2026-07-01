@@ -9,7 +9,7 @@ pub struct PlatformOutput {
     pub content: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct VesselSaveInput {
     pub generation_id: String,
     pub outputs: Vec<PlatformOutput>,

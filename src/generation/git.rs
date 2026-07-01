@@ -22,7 +22,7 @@ pub fn list_tags(repo_path: &str) -> Result<Vec<String>> {
     let repo = Repository::open(repo_path)
         .with_context(|| format!("opening repo at {repo_path}"))?;
     let tag_names = repo.tag_names(None)?;
-    let mut tags: Vec<String> = tag_names.iter().flatten().map(String::from).collect();
+    let mut tags: Vec<String> = tag_names.iter().flatten().flatten().map(String::from).collect();
     // sort descending by semver-like (simple lexicographic for now)
     tags.sort_by(|a, b| b.cmp(a));
     Ok(tags)
@@ -57,7 +57,7 @@ pub fn read_git_context(repo_path: &str, tag: &str) -> Result<GitContext> {
     for oid in revwalk.take(50) {
         let oid = oid?;
         let commit = repo.find_commit(oid)?;
-        let msg = commit.summary().unwrap_or("").to_string();
+        let msg = commit.summary().unwrap_or(None).unwrap_or("").to_string();
         let author = commit.author().name().unwrap_or("unknown").to_string();
         commits.push(CommitSummary {
             hash: oid.to_string()[..8].to_string(),
