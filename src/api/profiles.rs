@@ -1,7 +1,14 @@
-use axum::{extract::{State, Path}, Json, http::StatusCode};
+use crate::{
+    api::AppState,
+    db::profiles::{self, VoiceSettings},
+};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use serde::Deserialize;
 use serde_json::json;
-use crate::{api::AppState, db::profiles::{self, VoiceSettings}};
 
 #[derive(Deserialize)]
 pub struct CreateProfileInput {
@@ -51,7 +58,10 @@ pub async fn update(
     Path(id): Path<String>,
     Json(input): Json<CreateProfileInput>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let conn = state.db.connect().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = state
+        .db
+        .connect()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let now = chrono::Utc::now().timestamp();
     conn.execute(
         "UPDATE profiles SET name=?1, formality=COALESCE(?2,formality), humor=COALESCE(?3,humor),

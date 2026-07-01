@@ -1,9 +1,9 @@
-pub mod twitter;
-pub mod linkedin;
 pub mod bluesky;
-pub mod mastodon;
 pub mod discord;
 pub mod github_release;
+pub mod linkedin;
+pub mod mastodon;
+pub mod twitter;
 
 use serde::{Deserialize, Serialize};
 
@@ -53,11 +53,7 @@ impl Platform {
         let spec = self.spec();
         spec.char_limit.and_then(|limit| {
             let len = content.chars().count();
-            if len > limit {
-                Some(len - limit)
-            } else {
-                None
-            }
+            if len > limit { Some(len - limit) } else { None }
         })
     }
 

@@ -1,16 +1,30 @@
-use axum::{extract::{State, Path}, Json, http::StatusCode};
-use serde_json::json;
 use crate::{api::AppState, db::generations as gen_db};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
+use serde_json::json;
 
 pub async fn list(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
-    let conn = state.db.connect().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let mut rows = conn.query(
-        "SELECT id, project_id, tag, category, context_notes, created_at
+    let conn = state
+        .db
+        .connect()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let mut rows = conn
+        .query(
+            "SELECT id, project_id, tag, category, context_notes, created_at
          FROM generations ORDER BY created_at DESC LIMIT 50",
-        (),
-    ).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            (),
+        )
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let mut gens = vec![];
-    while let Some(row) = rows.next().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)? {
+    while let Some(row) = rows
+        .next()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    {
         gens.push(json!({
             "id": row.get::<String>(0).unwrap_or_default(),
             "project_id": row.get::<String>(1).unwrap_or_default(),
@@ -28,7 +42,9 @@ pub async fn get_one(
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     match gen_db::get_with_outputs(&state.db, &id).await {
-        Ok(Some((generation, outputs))) => Ok(Json(json!({ "generation": generation, "outputs": outputs }))),
+        Ok(Some((generation, outputs))) => Ok(Json(
+            json!({ "generation": generation, "outputs": outputs }),
+        )),
         Ok(None) => Err(StatusCode::NOT_FOUND),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }

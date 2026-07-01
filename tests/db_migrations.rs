@@ -2,7 +2,10 @@ use vessel::db;
 
 #[tokio::test]
 async fn migrations_run_idempotent() {
-    let db = libsql::Builder::new_local(":memory:").build().await.unwrap();
+    let db = libsql::Builder::new_local(":memory:")
+        .build()
+        .await
+        .unwrap();
     let conn = db.connect().unwrap();
     db::schema::run_migrations(&conn).await.unwrap();
     // run twice — must not error

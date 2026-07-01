@@ -1,8 +1,8 @@
+use crate::db::Db;
 use anyhow::Result;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::Utc;
-use crate::db::Db;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
@@ -27,8 +27,16 @@ pub async fn create(
     conn.execute(
         "INSERT INTO projects (id, profile_id, repo_path, github_repo, provider, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        libsql::params![id.clone(), profile_id, repo_path, github_repo, provider, now],
-    ).await?;
+        libsql::params![
+            id.clone(),
+            profile_id,
+            repo_path,
+            github_repo,
+            provider,
+            now
+        ],
+    )
+    .await?;
     Ok(Project {
         id,
         profile_id: profile_id.into(),
@@ -41,11 +49,13 @@ pub async fn create(
 
 pub async fn find_by_repo(db: &Db, repo_path: &str) -> Result<Option<Project>> {
     let conn = db.connect()?;
-    let mut rows = conn.query(
-        "SELECT id, profile_id, repo_path, github_repo, provider, created_at
+    let mut rows = conn
+        .query(
+            "SELECT id, profile_id, repo_path, github_repo, provider, created_at
          FROM projects WHERE repo_path = ?1 LIMIT 1",
-        [repo_path],
-    ).await?;
+            [repo_path],
+        )
+        .await?;
     match rows.next().await? {
         None => Ok(None),
         Some(row) => Ok(Some(Project {
@@ -61,11 +71,13 @@ pub async fn find_by_repo(db: &Db, repo_path: &str) -> Result<Option<Project>> {
 
 pub async fn list(db: &Db) -> Result<Vec<Project>> {
     let conn = db.connect()?;
-    let mut rows = conn.query(
-        "SELECT id, profile_id, repo_path, github_repo, provider, created_at
+    let mut rows = conn
+        .query(
+            "SELECT id, profile_id, repo_path, github_repo, provider, created_at
          FROM projects ORDER BY created_at DESC",
-        (),
-    ).await?;
+            (),
+        )
+        .await?;
     let mut out = vec![];
     while let Some(row) = rows.next().await? {
         out.push(Project {

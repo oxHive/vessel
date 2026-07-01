@@ -1,18 +1,17 @@
 pub mod prompts;
 pub mod tools;
 
+use crate::{config::VesselConfig, db::Db};
 use anyhow::Result;
 use rmcp::{
-    ErrorData, ServerHandler, ServiceExt,
+    ErrorData, RoleServer, ServerHandler, ServiceExt,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::*,
     service::RequestContext,
     tool, tool_handler, tool_router,
     transport::stdio,
-    RoleServer,
 };
 use std::sync::Arc;
-use crate::{config::VesselConfig, db::Db};
 
 #[derive(Clone)]
 pub struct VesselMcp {
@@ -23,13 +22,19 @@ pub struct VesselMcp {
 
 impl VesselMcp {
     pub fn new(db: Db, config: VesselConfig) -> Self {
-        Self { db, config: Arc::new(config), tool_router: Self::tool_router() }
+        Self {
+            db,
+            config: Arc::new(config),
+            tool_router: Self::tool_router(),
+        }
     }
 }
 
 #[tool_router]
 impl VesselMcp {
-    #[tool(description = "Save Vessel-generated content to local storage. Call this after generating platform content from a vessel-generate prompt.")]
+    #[tool(
+        description = "Save Vessel-generated content to local storage. Call this after generating platform content from a vessel-generate prompt."
+    )]
     async fn vessel_save(
         &self,
         Parameters(input): Parameters<tools::VesselSaveInput>,
@@ -66,10 +71,22 @@ impl ServerHandler for VesselMcp {
                     "vessel-generate",
                     Some("Generate platform-optimized release content for a git tag"),
                     Some(vec![
-                        PromptArgument::new("repo_path").with_description("Absolute path to the git repo (defaults to current directory)").with_required(false),
-                        PromptArgument::new("tag").with_description("Git tag to generate content for (defaults to latest tag)").with_required(false),
-                        PromptArgument::new("category").with_description("release | update | milestone | announcement").with_required(false),
-                        PromptArgument::new("context_notes").with_description("Optional extra context to include in generation").with_required(false),
+                        PromptArgument::new("repo_path")
+                            .with_description(
+                                "Absolute path to the git repo (defaults to current directory)",
+                            )
+                            .with_required(false),
+                        PromptArgument::new("tag")
+                            .with_description(
+                                "Git tag to generate content for (defaults to latest tag)",
+                            )
+                            .with_required(false),
+                        PromptArgument::new("category")
+                            .with_description("release | update | milestone | announcement")
+                            .with_required(false),
+                        PromptArgument::new("context_notes")
+                            .with_description("Optional extra context to include in generation")
+                            .with_required(false),
                     ]),
                 ),
                 Prompt::new(
@@ -81,8 +98,12 @@ impl ServerHandler for VesselMcp {
                     "vessel-revise",
                     Some("Revise previously generated content with new notes"),
                     Some(vec![
-                        PromptArgument::new("generation_id").with_description("The generation ID to revise").with_required(true),
-                        PromptArgument::new("notes").with_description("Revision instructions").with_required(true),
+                        PromptArgument::new("generation_id")
+                            .with_description("The generation ID to revise")
+                            .with_required(true),
+                        PromptArgument::new("notes")
+                            .with_description("Revision instructions")
+                            .with_required(true),
                     ]),
                 ),
                 Prompt::new(
@@ -103,48 +124,61 @@ impl ServerHandler for VesselMcp {
         let content = match req.name.as_str() {
             "vessel-generate" => {
                 // Convert JsonObject (Map<String, Value>) to HashMap<String, String>
-                let args: Option<std::collections::HashMap<String, String>> = req.arguments.map(|m| {
-                    m.into_iter()
-                        .filter_map(|(k, v)| {
-                            v.as_str().map(|s| (k, s.to_string()))
-                        })
-                        .collect()
-                });
-                prompts::handle_vessel_generate(&self.db, &self.config, args).await
+                let args: Option<std::collections::HashMap<String, String>> =
+                    req.arguments.map(|m| {
+                        m.into_iter()
+                            .filter_map(|(k, v)| v.as_str().map(|s| (k, s.to_string())))
+                            .collect()
+                    });
+                prompts::handle_vessel_generate(&self.db, &self.config, args)
+                    .await
                     .map_err(|e| ErrorData::internal_error(e.to_string(), None))?
             }
-            "vessel-status" => {
-                prompts::handle_vessel_status(&self.db).await
-                    .map_err(|e| ErrorData::internal_error(e.to_string(), None))?
-            }
+            "vessel-status" => prompts::handle_vessel_status(&self.db)
+                .await
+                .map_err(|e| ErrorData::internal_error(e.to_string(), None))?,
             "vessel-revise" => {
                 let args = req.arguments.unwrap_or_default();
-                let gen_id = args.get("generation_id")
+                let gen_id = args
+                    .get("generation_id")
                     .and_then(|v| v.as_str())
                     .unwrap_or_default()
                     .to_string();
-                let notes = args.get("notes")
+                let notes = args
+                    .get("notes")
                     .and_then(|v| v.as_str())
                     .unwrap_or_default()
                     .to_string();
-                prompts::handle_vessel_revise(&self.db, &gen_id, &notes).await
+                prompts::handle_vessel_revise(&self.db, &gen_id, &notes)
+                    .await
                     .map_err(|e| ErrorData::internal_error(e.to_string(), None))?
             }
-            "vessel-profile" => {
-                prompts::handle_vessel_profile(&self.db).await
-                    .map_err(|e| ErrorData::internal_error(e.to_string(), None))?
+            "vessel-profile" => prompts::handle_vessel_profile(&self.db)
+                .await
+                .map_err(|e| ErrorData::internal_error(e.to_string(), None))?,
+            other => {
+                return Err(ErrorData::invalid_params(
+                    format!("Unknown prompt: {other}"),
+                    None,
+                ));
             }
-            other => return Err(ErrorData::invalid_params(format!("Unknown prompt: {other}"), None)),
         };
-        Ok(GetPromptResult::new(vec![PromptMessage::new_text(Role::User, content)]))
+        Ok(GetPromptResult::new(vec![PromptMessage::new_text(
+            Role::User,
+            content,
+        )]))
     }
 }
 
 pub async fn serve(config: VesselConfig, db: Db) -> Result<()> {
     let server = VesselMcp::new(db, config);
-    let service = server.serve(stdio()).await
+    let service = server
+        .serve(stdio())
+        .await
         .map_err(|e| anyhow::anyhow!("MCP serve error: {e}"))?;
-    service.waiting().await
+    service
+        .waiting()
+        .await
         .map_err(|e| anyhow::anyhow!("MCP wait error: {e}"))?;
     Ok(())
 }

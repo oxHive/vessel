@@ -1,7 +1,7 @@
+use crate::db::{Db, generations as gen_db};
 use anyhow::Result;
 use rmcp::schemars;
 use serde::{Deserialize, Serialize};
-use crate::db::{Db, generations as gen_db};
 
 #[derive(Debug, Clone, Deserialize, Serialize, schemars::JsonSchema)]
 pub struct PlatformOutput {

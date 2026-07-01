@@ -1,7 +1,11 @@
-use axum::{extract::{State, Path}, Json, http::StatusCode};
+use crate::{api::AppState, db::projects, generation::git};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use serde::Deserialize;
 use serde_json::json;
-use crate::{api::AppState, db::projects, generation::git};
 
 #[derive(Deserialize)]
 pub struct CreateProjectInput {
@@ -38,7 +42,10 @@ pub async fn get_one(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let conn = state.db.connect().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = state
+        .db
+        .connect()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let mut rows = conn
         .query(
             "SELECT id, profile_id, repo_path, github_repo, provider, created_at
@@ -47,7 +54,11 @@ pub async fn get_one(
         )
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    match rows.next().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)? {
+    match rows
+        .next()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    {
         None => Err(StatusCode::NOT_FOUND),
         Some(row) => Ok(Json(json!({
             "id": row.get::<String>(0).unwrap_or_default(),
@@ -64,12 +75,19 @@ pub async fn list_tags(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let conn = state.db.connect().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = state
+        .db
+        .connect()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let mut rows = conn
         .query("SELECT repo_path FROM projects WHERE id=?1", [id])
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let repo_path = match rows.next().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)? {
+    let repo_path = match rows
+        .next()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    {
         None => return Err(StatusCode::NOT_FOUND),
         Some(row) => row.get::<Option<String>>(0).unwrap_or(None),
     };

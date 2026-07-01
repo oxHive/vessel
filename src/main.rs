@@ -1,12 +1,12 @@
-use clap::{Parser, Subcommand};
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 
+mod api;
 mod config;
 mod db;
-mod mcp;
 mod generation;
 mod hivemind;
-mod api;
+mod mcp;
 mod server;
 
 #[derive(Parser)]

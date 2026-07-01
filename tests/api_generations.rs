@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use axum_test::TestServer;
-use vessel::{api, db, config::VesselConfig};
 use std::sync::atomic::{AtomicU64, Ordering};
+use vessel::{api, config::VesselConfig, db};
 
 static TEST_DB_COUNTER: AtomicU64 = AtomicU64::new(0);
 

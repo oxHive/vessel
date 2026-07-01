@@ -1,10 +1,6 @@
-use anyhow::Result;
-use chrono::Utc;
-use uuid::Uuid;
-use std::collections::HashMap;
 use crate::{
     config::VesselConfig,
-    db::{Db, profiles, projects, generations as gen_db, feedback},
+    db::{Db, feedback, generations as gen_db, profiles, projects},
     generation::{
         git,
         platforms::Platform,
@@ -12,6 +8,10 @@ use crate::{
     },
     hivemind::HiveMindClient,
 };
+use anyhow::Result;
+use chrono::Utc;
+use std::collections::HashMap;
+use uuid::Uuid;
 
 pub async fn handle_vessel_generate(
     db: &Db,
@@ -19,17 +19,26 @@ pub async fn handle_vessel_generate(
     args: Option<HashMap<String, String>>,
 ) -> Result<String> {
     let args = args.unwrap_or_default();
-    let repo_path = args.get("repo_path").cloned()
-        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default().to_string_lossy().to_string());
+    let repo_path = args.get("repo_path").cloned().unwrap_or_else(|| {
+        std::env::current_dir()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string()
+    });
     let tag = args.get("tag").cloned();
-    let category = args.get("category").cloned().unwrap_or_else(|| "release".into());
+    let category = args
+        .get("category")
+        .cloned()
+        .unwrap_or_else(|| "release".into());
     let context_notes = args.get("context_notes").cloned();
 
     // resolve tag — use most recent if not specified
     let tags = git::list_tags(&repo_path)?;
     let tag = match tag {
         Some(t) => t,
-        None => tags.first().cloned()
+        None => tags
+            .first()
+            .cloned()
             .ok_or_else(|| anyhow::anyhow!("No git tags found in {}", repo_path))?,
     };
 
@@ -40,11 +49,10 @@ pub async fn handle_vessel_generate(
         Some(p) => p,
         None => {
             let default_profiles = profiles::list(db).await?;
-            let profile_id = default_profiles.first()
+            let profile_id = default_profiles
+                .first()
                 .map(|p| p.id.clone())
-                .unwrap_or_else(|| {
-                    format!("profile_{}", Uuid::new_v4().simple())
-                });
+                .unwrap_or_else(|| format!("profile_{}", Uuid::new_v4().simple()));
             // ensure default profile exists
             if default_profiles.is_empty() {
                 profiles::create(db, "Default", profiles::VoiceSettings::default()).await?;
@@ -57,7 +65,8 @@ pub async fn handle_vessel_generate(
         }
     };
 
-    let profile = profiles::get(db, &project.profile_id).await?
+    let profile = profiles::get(db, &project.profile_id)
+        .await?
         .ok_or_else(|| anyhow::anyhow!("Profile {} not found", project.profile_id))?;
 
     // fetch feedback history
@@ -70,10 +79,13 @@ pub async fn handle_vessel_generate(
 
     // HiveMind context (best-effort)
     let hivemind_ctx = HiveMindClient::new(config.hivemind.port)
-        .read_project_context(&repo_path).await.ok();
+        .read_project_context(&repo_path)
+        .await
+        .ok();
 
     // create generation record
-    let generation = gen_db::create(db, &project.id, &tag, &category, context_notes.as_deref()).await?;
+    let generation =
+        gen_db::create(db, &project.id, &tag, &category, context_notes.as_deref()).await?;
 
     let req = PromptRequest {
         git_context: git_ctx,
@@ -96,13 +108,20 @@ pub async fn handle_vessel_status(db: &Db) -> Result<String> {
     let mut lines = vec!["## Vessel Status".to_string(), String::new()];
     for project in &projects {
         let gens = gen_db::list_recent(db, &project.id, 3).await?;
-        let repo = project.repo_path.as_deref().unwrap_or(project.github_repo.as_deref().unwrap_or("unknown"));
+        let repo = project
+            .repo_path
+            .as_deref()
+            .unwrap_or(project.github_repo.as_deref().unwrap_or("unknown"));
         lines.push(format!("**{}**", repo));
         for generation in gens {
-            lines.push(format!("  - {} `{}` ({})", generation.category, generation.tag,
+            lines.push(format!(
+                "  - {} `{}` ({})",
+                generation.category,
+                generation.tag,
                 chrono::DateTime::from_timestamp(generation.created_at, 0)
                     .map(|d| d.format("%Y-%m-%d").to_string())
-                    .unwrap_or_default()));
+                    .unwrap_or_default()
+            ));
         }
     }
     lines.push(String::new());
@@ -111,7 +130,8 @@ pub async fn handle_vessel_status(db: &Db) -> Result<String> {
 }
 
 pub async fn handle_vessel_revise(db: &Db, gen_id: &str, notes: &str) -> Result<String> {
-    let (generation, outputs) = gen_db::get_with_outputs(db, gen_id).await?
+    let (generation, outputs) = gen_db::get_with_outputs(db, gen_id)
+        .await?
         .ok_or_else(|| anyhow::anyhow!("Generation {} not found", gen_id))?;
 
     // store revision notes
@@ -121,23 +141,33 @@ pub async fn handle_vessel_revise(db: &Db, gen_id: &str, notes: &str) -> Result<
     conn.execute(
         "INSERT INTO revision_notes (id, generation_id, notes, created_at) VALUES (?1, ?2, ?3, ?4)",
         libsql::params![note_id, gen_id, notes, now],
-    ).await?;
+    )
+    .await?;
 
     let mut lines = vec![
-        format!("## Vessel Revision — `{}` tag `{}`", generation.category, generation.tag),
+        format!(
+            "## Vessel Revision — `{}` tag `{}`",
+            generation.category, generation.tag
+        ),
         String::new(),
         format!("**Revision notes:** {notes}"),
         String::new(),
         "## Current Content".into(),
     ];
     for output in &outputs {
-        lines.push(format!("\n### {} (revision {})", output.platform, output.revision_number));
+        lines.push(format!(
+            "\n### {} (revision {})",
+            output.platform, output.revision_number
+        ));
         lines.push(output.content.clone());
     }
     lines.push(String::new());
     lines.push("## Instructions".into());
     lines.push("Revise the content above for each platform, applying the revision notes.".into());
-    lines.push(format!("When done, call `vessel_save` with `generation_id: \"{}\"` and the revised outputs.", gen_id));
+    lines.push(format!(
+        "When done, call `vessel_save` with `generation_id: \"{}\"` and the revised outputs.",
+        gen_id
+    ));
 
     Ok(lines.join("\n"))
 }
@@ -150,8 +180,10 @@ pub async fn handle_vessel_profile(db: &Db) -> Result<String> {
     let mut lines = vec!["## Vessel Brand Voice Profiles".to_string(), String::new()];
     for p in &profiles {
         lines.push(format!("**{}** ({})", p.name, p.id));
-        lines.push(format!("  Formality: {} | Humor: {} | Technical depth: {} | Self-promotion: {}",
-            p.formality, p.humor, p.technical_depth, p.self_promotion));
+        lines.push(format!(
+            "  Formality: {} | Humor: {} | Technical depth: {} | Self-promotion: {}",
+            p.formality, p.humor, p.technical_depth, p.self_promotion
+        ));
     }
     lines.push(String::new());
     lines.push("Manage profiles at: http://localhost:3458/profiles".into());

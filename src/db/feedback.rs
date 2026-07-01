@@ -1,8 +1,8 @@
+use crate::db::Db;
 use anyhow::Result;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::Utc;
-use crate::db::Db;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContentFeedback {
@@ -21,17 +21,20 @@ pub async fn record(db: &Db, generation_id: &str, platform: &str, signal: &str) 
         "INSERT INTO content_feedback (id, generation_id, platform, signal, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5)",
         libsql::params![id, generation_id, platform, signal, now],
-    ).await?;
+    )
+    .await?;
     Ok(())
 }
 
 pub async fn list_for_generation(db: &Db, gen_id: &str) -> Result<Vec<ContentFeedback>> {
     let conn = db.connect()?;
-    let mut rows = conn.query(
-        "SELECT id, generation_id, platform, signal, created_at
+    let mut rows = conn
+        .query(
+            "SELECT id, generation_id, platform, signal, created_at
          FROM content_feedback WHERE generation_id = ?1",
-        [gen_id],
-    ).await?;
+            [gen_id],
+        )
+        .await?;
     let mut out = vec![];
     while let Some(row) = rows.next().await? {
         out.push(ContentFeedback {

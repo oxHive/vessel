@@ -1,7 +1,7 @@
+use crate::{config::VesselConfig, db::Db};
 use anyhow::Result;
 use axum::http::{HeaderValue, Method};
 use tower_http::cors::CorsLayer;
-use crate::{config::VesselConfig, db::Db};
 
 pub async fn start(config: VesselConfig, db: Db) -> Result<()> {
     let port = config.server.port;

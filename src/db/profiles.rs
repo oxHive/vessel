@@ -1,8 +1,8 @@
+use crate::db::Db;
 use anyhow::Result;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::Utc;
-use crate::db::Db;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {

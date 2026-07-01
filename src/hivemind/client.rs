@@ -1,8 +1,8 @@
+use crate::generation::prompt::{HiveMindContext, HiveMindMemory};
 use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use crate::generation::prompt::{HiveMindContext, HiveMindMemory};
 
 #[derive(Clone)]
 pub struct HiveMindClient {
@@ -41,8 +41,10 @@ impl HiveMindClient {
     }
 
     pub async fn is_available(&self) -> bool {
-        self.client.get(format!("{}/status", self.base_url))
-            .send().await
+        self.client
+            .get(format!("{}/status", self.base_url))
+            .send()
+            .await
             .map(|r| r.status().is_success())
             .unwrap_or(false)
     }
@@ -54,16 +56,24 @@ impl HiveMindClient {
             .and_then(|n| n.to_str())
             .unwrap_or(repo_path);
 
-        let resp: SearchResponse = self.client
+        let resp: SearchResponse = self
+            .client
             .get(format!("{}/search", self.base_url))
             .query(&[("q", repo_name), ("limit", "20")])
-            .send().await?
-            .json().await?;
+            .send()
+            .await?
+            .json()
+            .await?;
 
         // filter out vessel: prefixed memories (those are written by Vessel itself)
-        let memories: Vec<HiveMindMemory> = resp.results.into_iter()
+        let memories: Vec<HiveMindMemory> = resp
+            .results
+            .into_iter()
             .filter(|m| !m.title.starts_with("vessel:"))
-            .map(|m| HiveMindMemory { title: m.title, content: m.content })
+            .map(|m| HiveMindMemory {
+                title: m.title,
+                content: m.content,
+            })
             .collect();
 
         Ok(HiveMindContext { memories })
@@ -84,7 +94,8 @@ impl HiveMindClient {
         self.client
             .post(format!("{}/memories", self.base_url))
             .json(&body)
-            .send().await?
+            .send()
+            .await?
             .error_for_status()?;
         Ok(())
     }

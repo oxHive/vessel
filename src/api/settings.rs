@@ -1,13 +1,17 @@
-use axum::{extract::{State, Path}, Json, http::StatusCode};
-use serde::Deserialize;
-use serde_json::json;
 use crate::{
     api::AppState,
-    generation::github::{encrypt_token, derive_encryption_key},
+    generation::github::{derive_encryption_key, encrypt_token},
     hivemind::HiveMindClient,
 };
-use uuid::Uuid;
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use chrono::Utc;
+use serde::Deserialize;
+use serde_json::json;
+use uuid::Uuid;
 
 pub async fn get(State(state): State<AppState>) -> Json<serde_json::Value> {
     let hivemind_available = HiveMindClient::new(state.config.hivemind.port)
@@ -33,11 +37,14 @@ pub async fn store_github_token(
     Json(input): Json<GithubTokenInput>,
 ) -> Result<(StatusCode, Json<serde_json::Value>), StatusCode> {
     let key = derive_encryption_key();
-    let (enc, nonce) = encrypt_token(&input.token, &key)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let (enc, nonce) =
+        encrypt_token(&input.token, &key).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let id = format!("ghtoken_{}", Uuid::new_v4().simple());
     let now = Utc::now().timestamp();
-    let conn = state.db.connect().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = state
+        .db
+        .connect()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     conn.execute(
         "INSERT INTO github_tokens (id, project_id, token_enc, nonce, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5)
@@ -53,7 +60,10 @@ pub async fn delete_github_token(
     State(state): State<AppState>,
     Path(project_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let conn = state.db.connect().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let conn = state
+        .db
+        .connect()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     conn.execute(
         "DELETE FROM github_tokens WHERE project_id=?1",
         [project_id],

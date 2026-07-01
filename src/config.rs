@@ -27,11 +27,17 @@ pub struct HiveMindConfig {
     pub port: u16,
 }
 
-fn default_server() -> ServerConfig { ServerConfig { port: 3458 } }
-fn default_storage() -> StorageConfig {
-    StorageConfig { path: "~/.vessel/vessel.db".into() }
+fn default_server() -> ServerConfig {
+    ServerConfig { port: 3458 }
 }
-fn default_hivemind() -> HiveMindConfig { HiveMindConfig { port: 3456 } }
+fn default_storage() -> StorageConfig {
+    StorageConfig {
+        path: "~/.vessel/vessel.db".into(),
+    }
+}
+fn default_hivemind() -> HiveMindConfig {
+    HiveMindConfig { port: 3456 }
+}
 
 impl Default for VesselConfig {
     fn default() -> Self {
@@ -54,8 +60,10 @@ impl VesselConfig {
     }
 
     pub fn db_path(&self) -> PathBuf {
-        let raw = self.storage.path.replace('~', &dirs::home_dir()
-            .unwrap_or_default().to_string_lossy());
+        let raw = self
+            .storage
+            .path
+            .replace('~', &dirs::home_dir().unwrap_or_default().to_string_lossy());
         PathBuf::from(raw)
     }
 }

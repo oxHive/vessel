@@ -1,5 +1,5 @@
-use vessel::db;
 use std::sync::atomic::{AtomicU64, Ordering};
+use vessel::db;
 
 static TEST_DB_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -44,7 +44,9 @@ async fn profile_list() {
 #[tokio::test]
 async fn profile_get_missing() {
     let db = test_db().await;
-    let result = db::profiles::get(&db, "profile_doesnotexist").await.unwrap();
+    let result = db::profiles::get(&db, "profile_doesnotexist")
+        .await
+        .unwrap();
     assert!(result.is_none());
 }
 
@@ -56,7 +58,9 @@ async fn project_find_by_repo() {
     db::projects::create(&db, &profile.id, Some("/home/user/myrepo"), None, "local")
         .await
         .unwrap();
-    let found = db::projects::find_by_repo(&db, "/home/user/myrepo").await.unwrap();
+    let found = db::projects::find_by_repo(&db, "/home/user/myrepo")
+        .await
+        .unwrap();
     assert!(found.is_some());
     let project = found.unwrap();
     assert!(project.id.starts_with("project_"));
@@ -66,7 +70,9 @@ async fn project_find_by_repo() {
 #[tokio::test]
 async fn project_find_by_repo_missing() {
     let db = test_db().await;
-    let found = db::projects::find_by_repo(&db, "/nonexistent").await.unwrap();
+    let found = db::projects::find_by_repo(&db, "/nonexistent")
+        .await
+        .unwrap();
     assert!(found.is_none());
 }
 
@@ -76,10 +82,9 @@ async fn generation_create_and_list_recent() {
     let profile = db::profiles::create(&db, "dev", db::profiles::VoiceSettings::default())
         .await
         .unwrap();
-    let project =
-        db::projects::create(&db, &profile.id, Some("/repo"), None, "local")
-            .await
-            .unwrap();
+    let project = db::projects::create(&db, &profile.id, Some("/repo"), None, "local")
+        .await
+        .unwrap();
     let generation = db::generations::create(&db, &project.id, "v1.0.0", "release", None)
         .await
         .unwrap();
@@ -97,13 +102,13 @@ async fn generation_save_output_and_get_with_outputs() {
     let profile = db::profiles::create(&db, "dev", db::profiles::VoiceSettings::default())
         .await
         .unwrap();
-    let project =
-        db::projects::create(&db, &profile.id, Some("/repo2"), None, "local")
-            .await
-            .unwrap();
-    let generation = db::generations::create(&db, &project.id, "v2.0.0", "release", Some("big release"))
+    let project = db::projects::create(&db, &profile.id, Some("/repo2"), None, "local")
         .await
         .unwrap();
+    let generation =
+        db::generations::create(&db, &project.id, "v2.0.0", "release", Some("big release"))
+            .await
+            .unwrap();
     let out = db::generations::save_output(&db, &generation.id, "twitter", "tweet content")
         .await
         .unwrap();
@@ -115,7 +120,9 @@ async fn generation_save_output_and_get_with_outputs() {
         .unwrap();
     assert_eq!(out2.revision_number, 1);
 
-    let result = db::generations::get_with_outputs(&db, &generation.id).await.unwrap();
+    let result = db::generations::get_with_outputs(&db, &generation.id)
+        .await
+        .unwrap();
     assert!(result.is_some());
     let (fetched_gen, outputs) = result.unwrap();
     assert_eq!(fetched_gen.tag, "v2.0.0");
@@ -129,16 +136,21 @@ async fn feedback_record_and_list() {
     let profile = db::profiles::create(&db, "dev", db::profiles::VoiceSettings::default())
         .await
         .unwrap();
-    let project =
-        db::projects::create(&db, &profile.id, Some("/repo3"), None, "local")
-            .await
-            .unwrap();
+    let project = db::projects::create(&db, &profile.id, Some("/repo3"), None, "local")
+        .await
+        .unwrap();
     let generation = db::generations::create(&db, &project.id, "v3.0.0", "release", None)
         .await
         .unwrap();
-    db::feedback::record(&db, &generation.id, "twitter", "liked").await.unwrap();
-    db::feedback::record(&db, &generation.id, "linkedin", "reused").await.unwrap();
-    let feedbacks = db::feedback::list_for_generation(&db, &generation.id).await.unwrap();
+    db::feedback::record(&db, &generation.id, "twitter", "liked")
+        .await
+        .unwrap();
+    db::feedback::record(&db, &generation.id, "linkedin", "reused")
+        .await
+        .unwrap();
+    let feedbacks = db::feedback::list_for_generation(&db, &generation.id)
+        .await
+        .unwrap();
     assert_eq!(feedbacks.len(), 2);
     let signals: Vec<&str> = feedbacks.iter().map(|f| f.signal.as_str()).collect();
     assert!(signals.contains(&"liked"));

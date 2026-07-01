@@ -1,8 +1,8 @@
+use crate::db::Db;
 use anyhow::Result;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::Utc;
-use crate::db::Db;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Generation {
@@ -38,7 +38,8 @@ pub async fn create(
         "INSERT INTO generations (id, project_id, tag, category, context_notes, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         libsql::params![id.clone(), project_id, tag, category, context_notes, now],
-    ).await?;
+    )
+    .await?;
     Ok(Generation {
         id,
         project_id: project_id.into(),
@@ -88,11 +89,13 @@ pub async fn save_output(
 
 pub async fn list_recent(db: &Db, project_id: &str, limit: u32) -> Result<Vec<Generation>> {
     let conn = db.connect()?;
-    let mut rows = conn.query(
-        "SELECT id, project_id, tag, category, context_notes, created_at
+    let mut rows = conn
+        .query(
+            "SELECT id, project_id, tag, category, context_notes, created_at
          FROM generations WHERE project_id = ?1 ORDER BY created_at DESC LIMIT ?2",
-        libsql::params![project_id, limit],
-    ).await?;
+            libsql::params![project_id, limit],
+        )
+        .await?;
     let mut out = vec![];
     while let Some(row) = rows.next().await? {
         out.push(Generation {
@@ -112,11 +115,13 @@ pub async fn get_with_outputs(
     gen_id: &str,
 ) -> Result<Option<(Generation, Vec<GenerationOutput>)>> {
     let conn = db.connect()?;
-    let mut rows = conn.query(
-        "SELECT id, project_id, tag, category, context_notes, created_at
+    let mut rows = conn
+        .query(
+            "SELECT id, project_id, tag, category, context_notes, created_at
          FROM generations WHERE id = ?1",
-        [gen_id],
-    ).await?;
+            [gen_id],
+        )
+        .await?;
     let generation = match rows.next().await? {
         None => return Ok(None),
         Some(row) => Generation {
@@ -128,12 +133,14 @@ pub async fn get_with_outputs(
             created_at: row.get(5)?,
         },
     };
-    let mut rows = conn.query(
-        "SELECT id, generation_id, platform, content, revision_number, created_at
+    let mut rows = conn
+        .query(
+            "SELECT id, generation_id, platform, content, revision_number, created_at
          FROM generation_outputs WHERE generation_id = ?1
          ORDER BY platform, revision_number DESC",
-        [gen_id],
-    ).await?;
+            [gen_id],
+        )
+        .await?;
     let mut outputs = vec![];
     while let Some(row) = rows.next().await? {
         outputs.push(GenerationOutput {

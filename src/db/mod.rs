@@ -1,13 +1,13 @@
-pub mod schema;
+pub mod feedback;
+pub mod generations;
 pub mod profiles;
 pub mod projects;
-pub mod generations;
-pub mod feedback;
+pub mod schema;
 
+use crate::config::VesselConfig;
 use anyhow::Result;
 use libsql::Database;
 use std::sync::Arc;
-use crate::config::VesselConfig;
 
 pub type Db = Arc<Database>;
 

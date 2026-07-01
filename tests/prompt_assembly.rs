@@ -1,21 +1,21 @@
-use vessel::generation::prompt::{PromptRequest, assemble_prompt};
-use vessel::generation::git::{GitContext, CommitSummary};
 use vessel::db::profiles::Profile;
+use vessel::generation::git::{CommitSummary, GitContext};
 use vessel::generation::platforms::Platform;
+use vessel::generation::prompt::{PromptRequest, assemble_prompt};
 
 fn test_git_context() -> GitContext {
     GitContext {
         tag: "v1.2.0".into(),
         prev_tag: Some("v1.1.0".into()),
         diff_stat: "3 files changed, 45 insertions(+), 12 deletions(-)".into(),
-        commits: vec![
-            CommitSummary {
-                hash: "abc1234".into(),
-                message: "fix: handle empty tags".into(),
-                author: "alice".into(),
-            },
-        ],
-        changelog_excerpt: Some("## v1.2.0\n- Fixed empty tag handling\n- Added retry logic".into()),
+        commits: vec![CommitSummary {
+            hash: "abc1234".into(),
+            message: "fix: handle empty tags".into(),
+            author: "alice".into(),
+        }],
+        changelog_excerpt: Some(
+            "## v1.2.0\n- Fixed empty tag handling\n- Added retry logic".into(),
+        ),
     }
 }
 

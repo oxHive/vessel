@@ -1,4 +1,4 @@
-use crate::db::{profiles::Profile, feedback::ContentFeedback};
+use crate::db::{feedback::ContentFeedback, profiles::Profile};
 use crate::generation::{git::GitContext, platforms::Platform};
 use serde::{Deserialize, Serialize};
 
@@ -46,8 +46,14 @@ pub fn assemble_prompt(req: &PromptRequest) -> String {
     parts.push(format!("Profile: {}", req.profile.name));
     parts.push(format!("- Formality: {}", req.profile.formality));
     parts.push(format!("- Humor: {}", req.profile.humor));
-    parts.push(format!("- Technical depth: {}", req.profile.technical_depth));
-    parts.push(format!("- Self-promotion comfort: {}", req.profile.self_promotion));
+    parts.push(format!(
+        "- Technical depth: {}",
+        req.profile.technical_depth
+    ));
+    parts.push(format!(
+        "- Self-promotion comfort: {}",
+        req.profile.self_promotion
+    ));
     parts.push(String::new());
 
     // Past feedback signals
@@ -66,13 +72,21 @@ pub fn assemble_prompt(req: &PromptRequest) -> String {
         if !liked.is_empty() {
             parts.push(format!(
                 "Previously well-received on: {}",
-                liked.iter().map(|f| f.platform.as_str()).collect::<Vec<_>>().join(", ")
+                liked
+                    .iter()
+                    .map(|f| f.platform.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
             ));
         }
         if !disliked.is_empty() {
             parts.push(format!(
                 "Avoid angles that didn't land on: {}",
-                disliked.iter().map(|f| f.platform.as_str()).collect::<Vec<_>>().join(", ")
+                disliked
+                    .iter()
+                    .map(|f| f.platform.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
             ));
         }
         parts.push(String::new());
@@ -109,7 +123,10 @@ pub fn assemble_prompt(req: &PromptRequest) -> String {
 
     // Platform instructions
     parts.push("## Output Required".into());
-    parts.push(format!("Generate content for {} platform(s):", req.platforms.len()));
+    parts.push(format!(
+        "Generate content for {} platform(s):",
+        req.platforms.len()
+    ));
     for platform in &req.platforms {
         let spec = platform.spec();
         parts.push(String::new());
@@ -117,14 +134,19 @@ pub fn assemble_prompt(req: &PromptRequest) -> String {
         parts.push(format!("Tone: {}", spec.tone_guidance));
         parts.push(format!("Format: {}", spec.format_notes));
         if let Some(limit) = spec.char_limit {
-            parts.push(format!("Character limit: {} chars HARD LIMIT — do not exceed.", limit));
+            parts.push(format!(
+                "Character limit: {} chars HARD LIMIT — do not exceed.",
+                limit
+            ));
         }
         parts.push(format!("Hashtags: {}", spec.hashtag_notes));
     }
 
     parts.push(String::new());
     parts.push("## Instructions".into());
-    parts.push("1. Generate content for each platform above following its exact constraints.".into());
+    parts.push(
+        "1. Generate content for each platform above following its exact constraints.".into(),
+    );
     parts.push("2. Platform tone guidance overrides general tone when they conflict.".into());
     parts.push("3. Respect character limits strictly — count carefully.".into());
     parts.push(format!("4. When done, call the `vessel_save` tool with:"));
