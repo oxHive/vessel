@@ -50,12 +50,11 @@ pub fn read_git_context(repo_path: &str, tag: &str) -> Result<GitContext> {
     let mut revwalk = repo.revwalk()?;
     revwalk.push(tag_commit_oid)?;
     revwalk.set_sorting(Sort::TIME)?;
-    if let Some(ref prev) = prev_tag {
-        if let Ok(prev_obj) = repo.revparse_single(&format!("refs/tags/{prev}")) {
-            if let Ok(prev_commit) = prev_obj.peel_to_commit() {
-                revwalk.hide(prev_commit.id())?;
-            }
-        }
+    if let Some(ref prev) = prev_tag
+        && let Ok(prev_obj) = repo.revparse_single(&format!("refs/tags/{prev}"))
+        && let Ok(prev_commit) = prev_obj.peel_to_commit()
+    {
+        revwalk.hide(prev_commit.id())?;
     }
 
     let mut commits = vec![];
@@ -121,8 +120,7 @@ fn read_changelog_section(repo_path: &str, tag: &str) -> Option<String> {
     let byte_end = end.min(rest.len()).min(
         rest.char_indices()
             .map(|(i, _)| i)
-            .filter(|&i| i <= cap)
-            .last()
+            .rfind(|&i| i <= cap)
             .unwrap_or(0),
     );
     let excerpt = &rest[..byte_end];

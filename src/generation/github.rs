@@ -134,7 +134,7 @@ pub fn encrypt_token(token: &str, key: &[u8; 32]) -> Result<(String, String)> {
     let ciphertext = cipher
         .encrypt(&nonce, token.as_bytes())
         .map_err(|e| anyhow::anyhow!("encrypt error: {e}"))?;
-    Ok((B64.encode(&ciphertext), B64.encode(&nonce)))
+    Ok((B64.encode(&ciphertext), B64.encode(nonce)))
 }
 
 /// Decrypt a token that was encrypted with `encrypt_token`.

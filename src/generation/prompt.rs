@@ -31,14 +31,14 @@ pub fn assemble_prompt(req: &PromptRequest) -> String {
     parts.push(String::new());
 
     // Project context from HiveMind
-    if let Some(ref hm) = req.hivemind_context {
-        if !hm.memories.is_empty() {
-            parts.push("## Project Context (from HiveMind)".into());
-            for mem in &hm.memories {
-                parts.push(format!("**{}**: {}", mem.title, mem.content));
-            }
-            parts.push(String::new());
+    if let Some(ref hm) = req.hivemind_context
+        && !hm.memories.is_empty()
+    {
+        parts.push("## Project Context (from HiveMind)".into());
+        for mem in &hm.memories {
+            parts.push(format!("**{}**: {}", mem.title, mem.content));
         }
+        parts.push(String::new());
     }
 
     // Brand voice
@@ -149,7 +149,7 @@ pub fn assemble_prompt(req: &PromptRequest) -> String {
     );
     parts.push("2. Platform tone guidance overrides general tone when they conflict.".into());
     parts.push("3. Respect character limits strictly — count carefully.".into());
-    parts.push(format!("4. When done, call the `vessel_save` tool with:"));
+    parts.push("4. When done, call the `vessel_save` tool with:".to_string());
     parts.push(format!("   - `generation_id`: `\"{}\"`", req.generation_id));
     parts.push("   - `outputs`: array of `{ platform: string, content: string }` objects".into());
     parts.push(format!(
