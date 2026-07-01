@@ -46,7 +46,7 @@ impl VesselMcp {
     }
 }
 
-#[tool_handler]
+#[tool_handler(router = self.tool_router)]
 impl ServerHandler for VesselMcp {
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(

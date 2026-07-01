@@ -12,20 +12,13 @@ pub struct HiveMindClient {
 
 #[derive(Deserialize)]
 struct SearchResponse {
-    count: u32,
     results: Vec<MemoryObject>,
 }
 
 #[derive(Deserialize)]
 struct MemoryObject {
-    id: String,
     title: String,
     content: String,
-}
-
-#[derive(Deserialize)]
-struct CreateMemoryResponse {
-    id: String,
 }
 
 impl HiveMindClient {
