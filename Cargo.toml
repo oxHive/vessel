@@ -31,7 +31,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }
 clap = { version = "4", features = ["derive"] }
-dirs = "5"
+dirs = "6"
 aes-gcm = "0.10"
 base64 = "0.22"
 rand = "0.8"
