@@ -1,13 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-
-mod api;
-mod config;
-mod db;
-mod generation;
-mod hivemind;
-mod mcp;
-mod server;
+use vessel::{config, db, mcp, server};
 
 #[derive(Parser)]
 #[command(name = "vessel", about = "Developer release announcement tool")]
