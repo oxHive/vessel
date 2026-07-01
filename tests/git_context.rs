@@ -71,3 +71,32 @@ fn read_context_has_commits_and_diff() {
     assert!(!ctx.commits.is_empty());
     assert!(!ctx.diff_stat.is_empty());
 }
+
+#[test]
+fn read_context_extracts_changelog_excerpt_for_tag() {
+    let repo = make_test_repo();
+    std::fs::write(
+        repo.path().join("CHANGELOG.md"),
+        "# Changelog\n\n## v0.2.0\n- Added hello fn\n- Fixed nothing\n\n## v0.1.0\n- Initial release\n",
+    )
+    .unwrap();
+    let ctx = git::read_git_context(repo.path().to_str().unwrap(), "v0.2.0").unwrap();
+    let excerpt = ctx.changelog_excerpt.expect("expected a changelog excerpt");
+    assert!(excerpt.contains("Added hello fn"));
+    assert!(!excerpt.contains("Initial release"));
+}
+
+#[test]
+fn read_context_has_no_changelog_excerpt_without_file() {
+    let repo = make_test_repo();
+    let ctx = git::read_git_context(repo.path().to_str().unwrap(), "v0.2.0").unwrap();
+    assert!(ctx.changelog_excerpt.is_none());
+}
+
+#[test]
+fn read_context_for_initial_tag_has_no_prev_tag() {
+    let repo = make_test_repo();
+    let ctx = git::read_git_context(repo.path().to_str().unwrap(), "v0.1.0").unwrap();
+    assert_eq!(ctx.prev_tag, None);
+    assert_eq!(ctx.diff_stat, "initial release");
+}

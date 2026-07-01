@@ -26,3 +26,9 @@ release-patch:
 # Release a new version: just release patch|minor|major
 _release bump:
   cargo release --execute {{bump}}
+
+clippy:
+  cargo clippy --all-targets
+
+coverage:
+  cargo tarpaulin --skip-clean --out Stdout

@@ -1,7 +1,8 @@
+use vessel::db::feedback::ContentFeedback;
 use vessel::db::profiles::Profile;
 use vessel::generation::git::{CommitSummary, GitContext};
 use vessel::generation::platforms::Platform;
-use vessel::generation::prompt::{PromptRequest, assemble_prompt};
+use vessel::generation::prompt::{HiveMindContext, HiveMindMemory, PromptRequest, assemble_prompt};
 
 fn test_git_context() -> GitContext {
     GitContext {
@@ -65,4 +66,73 @@ fn prompt_includes_changelog_when_present() {
     let prompt = assemble_prompt(&req);
     assert!(prompt.contains("retry logic"));
     assert!(prompt.contains("Highlight"));
+}
+
+#[test]
+fn prompt_includes_hivemind_context_when_present() {
+    let req = PromptRequest {
+        git_context: test_git_context(),
+        profile: test_profile(),
+        platforms: vec![Platform::Mastodon],
+        past_feedback: vec![],
+        hivemind_context: Some(HiveMindContext {
+            memories: vec![HiveMindMemory {
+                title: "Architecture".into(),
+                content: "Backend is Rust/axum".into(),
+            }],
+        }),
+        context_notes: None,
+        generation_id: "gen_hivemind".into(),
+    };
+    let prompt = assemble_prompt(&req);
+    assert!(prompt.contains("Project Context (from HiveMind)"));
+    assert!(prompt.contains("Architecture"));
+    assert!(prompt.contains("Backend is Rust/axum"));
+}
+
+#[test]
+fn prompt_omits_hivemind_section_when_memories_empty() {
+    let req = PromptRequest {
+        git_context: test_git_context(),
+        profile: test_profile(),
+        platforms: vec![Platform::Bluesky],
+        past_feedback: vec![],
+        hivemind_context: Some(HiveMindContext { memories: vec![] }),
+        context_notes: None,
+        generation_id: "gen_no_hivemind".into(),
+    };
+    let prompt = assemble_prompt(&req);
+    assert!(!prompt.contains("Project Context (from HiveMind)"));
+}
+
+#[test]
+fn prompt_includes_past_feedback_signals() {
+    let req = PromptRequest {
+        git_context: test_git_context(),
+        profile: test_profile(),
+        platforms: vec![Platform::GitHubRelease],
+        past_feedback: vec![
+            ContentFeedback {
+                id: "fb_1".into(),
+                generation_id: "gen_prev".into(),
+                platform: "twitter".into(),
+                signal: "liked".into(),
+                created_at: 0,
+            },
+            ContentFeedback {
+                id: "fb_2".into(),
+                generation_id: "gen_prev".into(),
+                platform: "linkedin".into(),
+                signal: "disliked".into(),
+                created_at: 0,
+            },
+        ],
+        hivemind_context: None,
+        context_notes: None,
+        generation_id: "gen_feedback".into(),
+    };
+    let prompt = assemble_prompt(&req);
+    assert!(prompt.contains("Content History Signals"));
+    assert!(prompt.contains("Previously well-received on: twitter"));
+    assert!(prompt.contains("Avoid angles that didn't land on: linkedin"));
 }
