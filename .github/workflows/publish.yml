@@ -1,0 +1,14 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    uses: oxHive/pipelines/.github/workflows/rust-release.yml@main
+    with:
+      package-name: oxvessel
+      binary-name: vessel
+    secrets: inherit
