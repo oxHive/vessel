@@ -1,0 +1,22 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/anthropics/claude-code@main/plugins/marketplace-schema.json",
+  "name": "vessel",
+  "description": "Developer release announcement tool for Claude Code",
+  "owner": {
+    "name": "oxGrad",
+    "email": "dev@graditya.com"
+  },
+  "plugins": [
+    {
+      "name": "vessel",
+      "displayName": "Vessel",
+      "source": "./",
+      "description": "Generate platform-tailored release announcements from git/GitHub release context",
+      "homepage": "https://github.com/oxHive/vessel",
+      "repository": "https://github.com/oxHive/vessel",
+      "license": "MIT",
+      "keywords": ["release", "changelog", "social", "mcp", "claude-code"],
+      "category": "productivity"
+    }
+  ]
+}
