@@ -34,7 +34,7 @@ clap = { version = "4", features = ["derive"] }
 dirs = "6"
 aes-gcm = "0.10"
 base64 = "0.22"
-rand = "0.8"
+rand = "0.10"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
