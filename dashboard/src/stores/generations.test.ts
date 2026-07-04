@@ -14,7 +14,9 @@ vi.mock('../api/client', () => ({
   },
 }))
 
-beforeEach(() => setActivePinia(createPinia()))
+beforeEach(() => {
+  setActivePinia(createPinia())
+})
 
 describe('useGenerationsStore', () => {
   it('fetchAll populates generations', async () => {
