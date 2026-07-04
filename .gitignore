@@ -4,3 +4,5 @@
 *.db-wal
 vessel.toml
 docs/superpowers
+dashboard/dist/
+dashboard/node_modules/
