@@ -7,6 +7,7 @@ export interface Generation {
   category: string
   context_notes: string | null
   created_at: number
+  review_state: string
 }
 
 export interface GenerationOutput {
@@ -88,6 +89,17 @@ export const api = {
     request<{ recorded: boolean }>('/api/v1/feedback', {
       method: 'POST',
       body: JSON.stringify({ generation_id, platform, signal }),
+    }),
+
+  postRevision: (generation_id: string, note: string, platform?: string) =>
+    request<{ queued: boolean }>(`/api/v1/generations/${generation_id}/revisions`, {
+      method: 'POST',
+      body: JSON.stringify({ note, platform: platform ?? null }),
+    }),
+
+  markReviewDone: (generation_id: string) =>
+    request<{ done: boolean }>(`/api/v1/generations/${generation_id}/done`, {
+      method: 'POST',
     }),
 
   // Profiles

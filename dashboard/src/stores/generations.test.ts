@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 
 vi.mock('../api/client', () => ({
@@ -34,5 +34,65 @@ describe('useGenerationsStore', () => {
     await store.fetchOne('gen_1')
     expect(store.current?.generation.id).toBe('gen_1')
     expect(store.current?.outputs).toHaveLength(1)
+  })
+})
+
+describe('subscribeToEvents', () => {
+  class FakeEventSource {
+    static instances: FakeEventSource[] = []
+    listeners: Record<string, (e: MessageEvent) => void> = {}
+    url: string
+    closed = false
+    constructor(url: string) {
+      this.url = url
+      FakeEventSource.instances.push(this)
+    }
+    addEventListener(type: string, cb: (e: MessageEvent) => void) {
+      this.listeners[type] = cb
+    }
+    close() {
+      this.closed = true
+    }
+  }
+
+  beforeEach(() => {
+    FakeEventSource.instances = []
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('refetches generation on outputs-updated', async () => {
+    const { useGenerationsStore } = await import('./generations')
+    const { api } = await import('../api/client')
+    const store = useGenerationsStore()
+    store.subscribeToEvents('gen_1')
+    const es = FakeEventSource.instances[0]
+    expect(es.url).toBe('/api/v1/generations/gen_1/events')
+
+    es.listeners['outputs-updated'](new MessageEvent('outputs-updated', { data: '{}' }))
+    expect(api.getGeneration).toHaveBeenCalledWith('gen_1')
+  })
+
+  it('stores agent reply message', async () => {
+    const { useGenerationsStore } = await import('./generations')
+    const store = useGenerationsStore()
+    store.subscribeToEvents('gen_1')
+    const es = FakeEventSource.instances[0]
+    es.listeners['agent-reply'](
+      new MessageEvent('agent-reply', { data: JSON.stringify({ message: 'revised' }) }),
+    )
+    expect(store.agentReply).toBe('revised')
+  })
+
+  it('closes previous source on resubscribe and on unsubscribe', async () => {
+    const { useGenerationsStore } = await import('./generations')
+    const store = useGenerationsStore()
+    store.subscribeToEvents('gen_1')
+    store.subscribeToEvents('gen_2')
+    expect(FakeEventSource.instances[0].closed).toBe(true)
+    store.unsubscribe()
+    expect(FakeEventSource.instances[1].closed).toBe(true)
   })
 })
