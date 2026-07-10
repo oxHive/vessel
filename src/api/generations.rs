@@ -13,7 +13,7 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<serde_json::Valu
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let mut rows = conn
         .query(
-            "SELECT id, project_id, tag, category, context_notes, created_at
+            "SELECT id, project_id, tag, category, context_notes, created_at, review_state
          FROM generations ORDER BY created_at DESC LIMIT 50",
             (),
         )
@@ -32,6 +32,7 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<serde_json::Valu
             "category": row.get::<String>(3).unwrap_or_default(),
             "context_notes": row.get::<Option<String>>(4).unwrap_or(None),
             "created_at": row.get::<i64>(5).unwrap_or_default(),
+            "review_state": row.get::<String>(6).unwrap_or_default(),
         }));
     }
     Ok(Json(json!({ "count": gens.len(), "generations": gens })))

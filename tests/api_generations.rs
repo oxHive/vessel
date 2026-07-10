@@ -52,6 +52,17 @@ async fn generations_list_empty() {
 }
 
 #[tokio::test]
+async fn generations_list_includes_review_state() {
+    let (server, db) = test_app().await;
+    seed_generation(&db).await;
+
+    let resp = server.get("/api/v1/generations").await;
+    resp.assert_status(StatusCode::OK);
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["generations"][0]["review_state"], "open");
+}
+
+#[tokio::test]
 async fn generation_response_includes_review_state() {
     let (server, db) = test_app().await;
     let gen_id = seed_generation(&db).await;
