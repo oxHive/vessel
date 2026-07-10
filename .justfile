@@ -8,6 +8,13 @@ test:
 dashboard:
   bun run build
 
+# Browser e2e: build the dashboard (debug binaries serve dist from disk),
+# then drive the real `vessel up` binary with Playwright
+[working-directory: 'dashboard']
+e2e-ui:
+  npm run build
+  npx playwright test
+
 build:
   cargo build
 
