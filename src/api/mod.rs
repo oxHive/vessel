@@ -2,6 +2,7 @@ pub mod feedback;
 pub mod generations;
 pub mod profiles;
 pub mod projects;
+pub mod review;
 pub mod settings;
 
 use crate::{config::VesselConfig, db::Db};
@@ -16,12 +17,14 @@ use std::sync::Arc;
 pub struct AppState {
     pub db: Db,
     pub config: Arc<VesselConfig>,
+    pub loops: review::Loops,
 }
 
 pub fn router(db: Db, config: VesselConfig) -> Router {
     let state = AppState {
         db,
         config: Arc::new(config),
+        loops: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
     };
     Router::new()
         .route("/health", get(health))
@@ -31,6 +34,12 @@ pub fn router(db: Db, config: VesselConfig) -> Router {
             "/api/v1/generations/{id}/outputs",
             get(generations::list_outputs),
         )
+        .route("/api/v1/generations/{id}/poll", get(review::poll))
+        .route(
+            "/api/v1/generations/{id}/revisions",
+            post(review::create_revision),
+        )
+        .route("/api/v1/generations/{id}/done", post(review::mark_done))
         .route("/api/v1/feedback", post(feedback::create))
         .route(
             "/api/v1/profiles",
