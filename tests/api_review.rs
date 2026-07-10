@@ -192,7 +192,10 @@ async fn loop_state_broadcasts_events_to_subscribers() {
     let mut rx = ls.sse_tx.subscribe();
 
     ls.sse_tx
-        .send(LoopEvent { kind: "agent-reply", payload: r#"{"message":"hi"}"#.into() })
+        .send(LoopEvent {
+            kind: "agent-reply",
+            payload: r#"{"message":"hi"}"#.into(),
+        })
         .unwrap();
 
     let ev = rx.recv().await.unwrap();

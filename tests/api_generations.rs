@@ -67,9 +67,7 @@ async fn generation_response_includes_review_state() {
     let (server, db) = test_app().await;
     let gen_id = seed_generation(&db).await;
 
-    let resp = server
-        .get(&format!("/api/v1/generations/{gen_id}"))
-        .await;
+    let resp = server.get(&format!("/api/v1/generations/{gen_id}")).await;
     resp.assert_status(StatusCode::OK);
     let body: serde_json::Value = resp.json();
     assert_eq!(body["generation"]["review_state"], "open");

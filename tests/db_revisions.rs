@@ -78,7 +78,9 @@ async fn review_state_lifecycle() {
         Some("open".to_string())
     );
     assert_eq!(
-        db::revisions::review_state(&db, "gen_missing").await.unwrap(),
+        db::revisions::review_state(&db, "gen_missing")
+            .await
+            .unwrap(),
         None
     );
 
@@ -87,5 +89,9 @@ async fn review_state_lifecycle() {
         db::revisions::review_state(&db, &gen_id).await.unwrap(),
         Some("done".to_string())
     );
-    assert!(!db::revisions::set_review_done(&db, "gen_missing").await.unwrap());
+    assert!(
+        !db::revisions::set_review_done(&db, "gen_missing")
+            .await
+            .unwrap()
+    );
 }

@@ -83,10 +83,9 @@ async fn seed_generation(env: &TestEnv) -> (vessel::db::Db, String) {
     let project = vessel::db::projects::create(&db, &profile.id, Some("/repo"), None, "local")
         .await
         .unwrap();
-    let generation =
-        vessel::db::generations::create(&db, &project.id, "v1.0.0", "release", None)
-            .await
-            .unwrap();
+    let generation = vessel::db::generations::create(&db, &project.id, "v1.0.0", "release", None)
+        .await
+        .unwrap();
     vessel::db::generations::save_output(&db, &generation.id, "twitter", "hello world")
         .await
         .unwrap();
@@ -113,7 +112,10 @@ async fn binary_serves_full_review_loop_over_http() {
         .text()
         .await
         .unwrap();
-    assert!(html.contains("<title>"), "SPA shell not served: {html:.200}");
+    assert!(
+        html.contains("<title>"),
+        "SPA shell not served: {html:.200}"
+    );
 
     // Detail endpoint carries outputs and review_state.
     let detail: Value = client
@@ -197,7 +199,9 @@ async fn binary_serves_full_review_loop_over_http() {
 
     // Done is terminal: the next poll returns session_ended immediately.
     let after: Value = client
-        .get(format!("{base}/api/v1/generations/{gen_id}/poll?timeout_ms=2000"))
+        .get(format!(
+            "{base}/api/v1/generations/{gen_id}/poll?timeout_ms=2000"
+        ))
         .send()
         .await
         .unwrap()
@@ -247,7 +251,11 @@ async fn mcp_stdio_exposes_tools_and_returns_queued_feedback() {
     // port the MCP poll tool bridges to.
     let cfg_dir = env.home.join(".config/vessel");
     std::fs::create_dir_all(&cfg_dir).unwrap();
-    std::fs::write(cfg_dir.join("vessel.toml"), format!("[server]\nport = {port}\n")).unwrap();
+    std::fs::write(
+        cfg_dir.join("vessel.toml"),
+        format!("[server]\nport = {port}\n"),
+    )
+    .unwrap();
 
     let _server = spawn_up(&env, &[]);
     let base = format!("http://127.0.0.1:{port}");

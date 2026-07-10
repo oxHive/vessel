@@ -62,10 +62,7 @@ impl VesselConfig {
     pub fn db_path(&self) -> PathBuf {
         match &self.storage.path {
             Some(raw) => expand_tilde(raw),
-            None => resolve_default_db_path(
-                dirs::data_dir(),
-                dirs::home_dir().unwrap_or_default(),
-            ),
+            None => resolve_default_db_path(dirs::data_dir(), dirs::home_dir().unwrap_or_default()),
         }
     }
 }

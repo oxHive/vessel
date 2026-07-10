@@ -20,10 +20,7 @@ fn explicit_storage_path_wins_and_expands_tilde() {
 fn fresh_install_resolves_to_xdg_data_dir() {
     let data = tempfile::tempdir().unwrap();
     let home = tempfile::tempdir().unwrap();
-    let path = resolve_default_db_path(
-        Some(data.path().to_path_buf()),
-        home.path().to_path_buf(),
-    );
+    let path = resolve_default_db_path(Some(data.path().to_path_buf()), home.path().to_path_buf());
     assert_eq!(path, data.path().join("vessel").join("vessel.db"));
 }
 
@@ -35,10 +32,7 @@ fn legacy_db_is_used_when_xdg_db_missing() {
     std::fs::create_dir_all(&legacy_dir).unwrap();
     std::fs::write(legacy_dir.join("vessel.db"), b"").unwrap();
 
-    let path = resolve_default_db_path(
-        Some(data.path().to_path_buf()),
-        home.path().to_path_buf(),
-    );
+    let path = resolve_default_db_path(Some(data.path().to_path_buf()), home.path().to_path_buf());
     assert_eq!(path, legacy_dir.join("vessel.db"));
 }
 
@@ -53,10 +47,7 @@ fn xdg_db_wins_when_both_exist() {
     std::fs::create_dir_all(&legacy_dir).unwrap();
     std::fs::write(legacy_dir.join("vessel.db"), b"").unwrap();
 
-    let path = resolve_default_db_path(
-        Some(data.path().to_path_buf()),
-        home.path().to_path_buf(),
-    );
+    let path = resolve_default_db_path(Some(data.path().to_path_buf()), home.path().to_path_buf());
     assert_eq!(path, xdg_dir.join("vessel.db"));
 }
 
