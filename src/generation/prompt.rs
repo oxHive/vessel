@@ -160,6 +160,9 @@ pub fn assemble_prompt(req: &PromptRequest) -> String {
             .collect::<Vec<_>>()
             .join(", ")
     ));
+    parts.push(
+        "After vessel_save succeeds, call vessel_poll_feedback with the same generation_id to wait for the user's review feedback from the dashboard.".into(),
+    );
 
     parts.join("\n")
 }

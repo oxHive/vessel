@@ -39,8 +39,23 @@ impl VesselMcp {
         &self,
         Parameters(input): Parameters<tools::VesselSaveInput>,
     ) -> Result<CallToolResult, ErrorData> {
-        match tools::vessel_save(&self.db, input).await {
+        match tools::vessel_save(&self.db, &self.config, input).await {
             Ok(msg) => Ok(CallToolResult::success(vec![ContentBlock::text(msg)])),
+            Err(e) => Err(ErrorData::internal_error(e.to_string(), None)),
+        }
+    }
+
+    #[tool(
+        description = "Wait for review feedback from the Vessel dashboard. Call this after vessel_save. Blocks until the user requests revisions in the browser, clicks Done reviewing, or ~10 minutes pass (then it returns timeout:true — call it again to keep waiting; queued feedback is never lost). Apply the returned revisions, vessel_save the revised outputs, then call this tool again with agent_reply set to a one-line summary of what changed. When session_ended is true, stop — do not call this tool again unless the user asks for more review."
+    )]
+    async fn vessel_poll_feedback(
+        &self,
+        Parameters(input): Parameters<tools::VesselPollInput>,
+    ) -> Result<CallToolResult, ErrorData> {
+        match tools::vessel_poll_feedback(&self.config, input).await {
+            Ok(v) => Ok(CallToolResult::success(vec![ContentBlock::text(
+                v.to_string(),
+            )])),
             Err(e) => Err(ErrorData::internal_error(e.to_string(), None)),
         }
     }
@@ -56,7 +71,7 @@ impl ServerHandler for VesselMcp {
                 .build(),
         )
         .with_server_info(Implementation::new("vessel", env!("CARGO_PKG_VERSION")))
-        .with_instructions("Vessel release announcement tool. Use /vessel-generate to create social content for a release. Use /vessel-status to see recent activity.")
+        .with_instructions("Vessel release announcement tool. Use /vessel-generate to create social content for a release. After saving with vessel_save, call vessel_poll_feedback to wait for the user's dashboard review. Use /vessel-status to see recent activity.")
     }
 
     async fn list_prompts(

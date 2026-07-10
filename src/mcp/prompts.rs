@@ -168,6 +168,9 @@ pub async fn handle_vessel_revise(db: &Db, gen_id: &str, notes: &str) -> Result<
         "When done, call `vessel_save` with `generation_id: \"{}\"` and the revised outputs.",
         gen_id
     ));
+    lines.push(
+        "After vessel_save succeeds, call vessel_poll_feedback with the same generation_id to wait for the user's review feedback from the dashboard.".into(),
+    );
 
     Ok(lines.join("\n"))
 }
