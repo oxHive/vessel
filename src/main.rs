@@ -11,7 +11,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Up,
+    Up {
+        /// Override the dashboard port from the config file
+        #[arg(long)]
+        port: Option<u16>,
+    },
     Mcp,
 }
 
@@ -19,11 +23,19 @@ enum Commands {
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let cli = Cli::parse();
-    let config = config::VesselConfig::load()?;
-    let db = db::init(&config).await?;
+    let mut config = config::VesselConfig::load()?;
 
     match cli.command {
-        Commands::Up => server::start(config, db).await,
-        Commands::Mcp => mcp::serve(config, db).await,
+        Commands::Up { port } => {
+            if let Some(port) = port {
+                config.server.port = port;
+            }
+            let db = db::init(&config).await?;
+            server::start(config, db).await
+        }
+        Commands::Mcp => {
+            let db = db::init(&config).await?;
+            mcp::serve(config, db).await
+        }
     }
 }
