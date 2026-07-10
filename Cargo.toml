@@ -37,6 +37,7 @@ base64 = "0.22"
 rand = "0.10"
 rust-embed = { version = "8", features = ["include-exclude"] }
 mime_guess = "2"
+tokio-stream = { version = "0.1", features = ["sync"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }

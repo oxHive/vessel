@@ -3,6 +3,7 @@ use axum::{
     Json,
     extract::{Path, Query, State},
     http::StatusCode,
+    response::sse::{Event, KeepAlive, Sse},
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -12,6 +13,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::sync::{Notify, RwLock, broadcast};
+use tokio_stream::{StreamExt, wrappers::BroadcastStream};
 
 #[derive(Clone, Debug)]
 pub struct LoopEvent {
@@ -145,4 +147,47 @@ pub async fn mark_done(
         payload: "{}".into(),
     });
     Ok(Json(json!({ "done": true })))
+}
+
+#[derive(Deserialize)]
+pub struct AgentReplyInput {
+    pub message: String,
+}
+
+pub async fn agent_reply(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(input): Json<AgentReplyInput>,
+) -> Json<serde_json::Value> {
+    let ls = loop_state(&state.loops, &id).await;
+    let _ = ls.sse_tx.send(LoopEvent {
+        kind: "agent-reply",
+        payload: json!({ "message": input.message }).to_string(),
+    });
+    Json(json!({ "sent": true }))
+}
+
+pub async fn outputs_updated(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Json<serde_json::Value> {
+    let ls = loop_state(&state.loops, &id).await;
+    let _ = ls.sse_tx.send(LoopEvent {
+        kind: "outputs-updated",
+        payload: "{}".into(),
+    });
+    Json(json!({ "notified": true }))
+}
+
+pub async fn events(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Sse<impl tokio_stream::Stream<Item = Result<Event, std::convert::Infallible>>> {
+    let ls = loop_state(&state.loops, &id).await;
+    let rx = ls.sse_tx.subscribe();
+    let stream = BroadcastStream::new(rx).filter_map(|msg| {
+        msg.ok()
+            .map(|e| Ok(Event::default().event(e.kind).data(e.payload)))
+    });
+    Sse::new(stream).keep_alive(KeepAlive::default())
 }

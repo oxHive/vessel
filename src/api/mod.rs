@@ -40,6 +40,12 @@ pub fn router(db: Db, config: VesselConfig) -> Router {
             post(review::create_revision),
         )
         .route("/api/v1/generations/{id}/done", post(review::mark_done))
+        .route("/api/v1/generations/{id}/agent-reply", post(review::agent_reply))
+        .route(
+            "/api/v1/generations/{id}/outputs-updated",
+            post(review::outputs_updated),
+        )
+        .route("/api/v1/generations/{id}/events", get(review::events))
         .route("/api/v1/feedback", post(feedback::create))
         .route(
             "/api/v1/profiles",
