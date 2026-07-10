@@ -12,6 +12,7 @@ pub struct Generation {
     pub category: String,
     pub context_notes: Option<String>,
     pub created_at: i64,
+    pub review_state: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,6 +48,7 @@ pub async fn create(
         category: category.into(),
         context_notes: context_notes.map(Into::into),
         created_at: now,
+        review_state: "open".into(),
     })
 }
 
@@ -91,7 +93,7 @@ pub async fn list_recent(db: &Db, project_id: &str, limit: u32) -> Result<Vec<Ge
     let conn = db.connect()?;
     let mut rows = conn
         .query(
-            "SELECT id, project_id, tag, category, context_notes, created_at
+            "SELECT id, project_id, tag, category, context_notes, created_at, review_state
          FROM generations WHERE project_id = ?1 ORDER BY created_at DESC LIMIT ?2",
             libsql::params![project_id, limit],
         )
@@ -105,6 +107,7 @@ pub async fn list_recent(db: &Db, project_id: &str, limit: u32) -> Result<Vec<Ge
             category: row.get(3)?,
             context_notes: row.get(4)?,
             created_at: row.get(5)?,
+            review_state: row.get(6)?,
         });
     }
     Ok(out)
@@ -117,7 +120,7 @@ pub async fn get_with_outputs(
     let conn = db.connect()?;
     let mut rows = conn
         .query(
-            "SELECT id, project_id, tag, category, context_notes, created_at
+            "SELECT id, project_id, tag, category, context_notes, created_at, review_state
          FROM generations WHERE id = ?1",
             [gen_id],
         )
@@ -131,6 +134,7 @@ pub async fn get_with_outputs(
             category: row.get(3)?,
             context_notes: row.get(4)?,
             created_at: row.get(5)?,
+            review_state: row.get(6)?,
         },
     };
     let mut rows = conn

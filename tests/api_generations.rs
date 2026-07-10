@@ -5,7 +5,7 @@ use vessel::{api, config::VesselConfig, db};
 
 static TEST_DB_COUNTER: AtomicU64 = AtomicU64::new(0);
 
-async fn test_app() -> TestServer {
+async fn test_app() -> (TestServer, db::Db) {
     let db = {
         let n = TEST_DB_COUNTER.fetch_add(1, Ordering::SeqCst);
         let pid = std::process::id();
@@ -16,13 +16,26 @@ async fn test_app() -> TestServer {
         std::sync::Arc::new(raw)
     };
     let config = VesselConfig::default();
-    let app = api::router(db, config);
-    TestServer::new(app)
+    let app = api::router(db.clone(), config);
+    (TestServer::new(app), db)
+}
+
+async fn seed_generation(db: &db::Db) -> String {
+    let profile = db::profiles::create(db, "dev", db::profiles::VoiceSettings::default())
+        .await
+        .unwrap();
+    let project = db::projects::create(db, &profile.id, Some("/repo"), None, "local")
+        .await
+        .unwrap();
+    db::generations::create(db, &project.id, "v1.0.0", "release", None)
+        .await
+        .unwrap()
+        .id
 }
 
 #[tokio::test]
 async fn health_returns_ok() {
-    let server = test_app().await;
+    let (server, _db) = test_app().await;
     let resp = server.get("/health").await;
     resp.assert_status(StatusCode::OK);
     let body: serde_json::Value = resp.json();
@@ -31,9 +44,22 @@ async fn health_returns_ok() {
 
 #[tokio::test]
 async fn generations_list_empty() {
-    let server = test_app().await;
+    let (server, _db) = test_app().await;
     let resp = server.get("/api/v1/generations").await;
     resp.assert_status(StatusCode::OK);
     let body: serde_json::Value = resp.json();
     assert_eq!(body["count"], 0);
+}
+
+#[tokio::test]
+async fn generation_response_includes_review_state() {
+    let (server, db) = test_app().await;
+    let gen_id = seed_generation(&db).await;
+
+    let resp = server
+        .get(&format!("/api/v1/generations/{gen_id}"))
+        .await;
+    resp.assert_status(StatusCode::OK);
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["generation"]["review_state"], "open");
 }
