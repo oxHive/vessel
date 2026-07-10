@@ -31,6 +31,7 @@ export const useGenerationsStore = defineStore('generations', () => {
 
   function subscribeToEvents(id: string) {
     unsubscribe()
+    agentReply.value = null
     events = new EventSource(`/api/v1/generations/${id}/events`)
     events.addEventListener('outputs-updated', () => {
       void fetchOne(id)
