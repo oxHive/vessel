@@ -60,10 +60,10 @@ fn spawn_up(env: &TestEnv, args: &[&str]) -> ChildGuard {
 
 async fn wait_healthy(client: &reqwest::Client, base: &str) {
     for _ in 0..100 {
-        if let Ok(resp) = client.get(format!("{base}/health")).send().await {
-            if resp.status().is_success() {
-                return;
-            }
+        if let Ok(resp) = client.get(format!("{base}/health")).send().await
+            && resp.status().is_success()
+        {
+            return;
         }
         tokio::time::sleep(Duration::from_millis(100)).await;
     }

@@ -42,6 +42,16 @@ async fn serve_spa(req: Request) -> impl IntoResponse {
 }
 
 pub async fn start(config: VesselConfig, db: Db) -> Result<()> {
+    // A real dashboard build embeds index.html plus its assets/ bundle; a
+    // single file means build.rs fell back to its no-dashboard placeholder
+    // (see build.rs) because `dashboard/dist` didn't exist at compile time.
+    if DashboardAssets::iter().count() <= 1 {
+        tracing::warn!(
+            "this build has no dashboard UI embedded (dashboard/dist wasn't built before \
+             compiling) — the API still works, but browser routes will show a stub page. \
+             Run `just dashboard` and rebuild to get the real UI."
+        );
+    }
     let port = config.server.port;
     let origin: HeaderValue = format!("http://localhost:{port}").parse()?;
     let cors = CorsLayer::new()
