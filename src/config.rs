@@ -19,7 +19,9 @@ pub struct ServerConfig {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StorageConfig {
-    pub path: String,
+    /// Explicit database path (supports `~`). When unset, vessel resolves an
+    /// XDG-compliant default with a fallback to the legacy `~/.vessel` location.
+    pub path: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -31,9 +33,7 @@ fn default_server() -> ServerConfig {
     ServerConfig { port: 3458 }
 }
 fn default_storage() -> StorageConfig {
-    StorageConfig {
-        path: "~/.vessel/vessel.db".into(),
-    }
+    StorageConfig { path: None }
 }
 fn default_hivemind() -> HiveMindConfig {
     HiveMindConfig { port: 3456 }
@@ -60,12 +60,44 @@ impl VesselConfig {
     }
 
     pub fn db_path(&self) -> PathBuf {
-        let raw = self
-            .storage
-            .path
-            .replace('~', &dirs::home_dir().unwrap_or_default().to_string_lossy());
-        PathBuf::from(raw)
+        match &self.storage.path {
+            Some(raw) => expand_tilde(raw),
+            None => resolve_default_db_path(
+                dirs::data_dir(),
+                dirs::home_dir().unwrap_or_default(),
+            ),
+        }
     }
+}
+
+fn expand_tilde(raw: &str) -> PathBuf {
+    PathBuf::from(raw.replace('~', &dirs::home_dir().unwrap_or_default().to_string_lossy()))
+}
+
+/// Default DB location: the platform data dir (`$XDG_DATA_HOME`/`~/.local/share`
+/// on Linux), unless only a legacy `~/.vessel/vessel.db` from an older install
+/// exists — then the legacy path keeps working so upgrades don't orphan data.
+pub fn resolve_default_db_path(data_dir: Option<PathBuf>, home: PathBuf) -> PathBuf {
+    let xdg = data_dir
+        .unwrap_or_else(|| home.join(".local").join("share"))
+        .join("vessel")
+        .join("vessel.db");
+    if xdg.exists() {
+        return xdg;
+    }
+    let legacy = home.join(".vessel").join("vessel.db");
+    if legacy.exists() {
+        static LEGACY_WARN: std::sync::Once = std::sync::Once::new();
+        LEGACY_WARN.call_once(|| {
+            tracing::warn!(
+                "using legacy database at {}; move it to {} (or set storage.path in vessel.toml) to adopt the XDG location",
+                legacy.display(),
+                xdg.display()
+            );
+        });
+        return legacy;
+    }
+    xdg
 }
 
 fn config_path() -> PathBuf {

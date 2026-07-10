@@ -9,7 +9,7 @@ async fn init_creates_db_file_and_runs_migrations() {
     let pid = std::process::id();
     let dir = std::env::temp_dir().join(format!("vessel_db_init_test_{}_{}", pid, n));
     let mut config = VesselConfig::default();
-    config.storage.path = dir.join("vessel.db").to_string_lossy().to_string();
+    config.storage.path = Some(dir.join("vessel.db").to_string_lossy().to_string());
 
     let vessel_db = db::init(&config).await.unwrap();
     assert!(dir.join("vessel.db").exists());
