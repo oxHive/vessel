@@ -82,6 +82,7 @@ pub async fn vessel_poll_feedback(
 
     let deadline = Instant::now() + Duration::from_secs(600);
     loop {
+        let iteration_started = Instant::now();
         let resp = client
             .get(format!(
                 "{base}/api/v1/generations/{}/poll",
@@ -107,6 +108,12 @@ pub async fn vessel_poll_feedback(
             }));
         }
         // Server-side timeout elapsed with no feedback; re-poll.
+        // Defensive floor: a healthy server holds the poll ~55s; a fast empty
+        // response means something is off — don't hot-spin against localhost.
+        let elapsed = iteration_started.elapsed();
+        if elapsed < Duration::from_secs(1) {
+            tokio::time::sleep(Duration::from_secs(1) - elapsed).await;
+        }
     }
 }
 
