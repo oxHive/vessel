@@ -150,7 +150,7 @@ async fn unknown_generation_is_404_and_empty_note_is_400() {
 }
 
 #[tokio::test]
-async fn agent_reply_and_outputs_updated_broadcast_to_sse_subscribers() {
+async fn agent_reply_and_outputs_updated_accept_known_generation() {
     let (server, db) = test_app().await;
     let gen_id = seed_generation(&db).await;
 
@@ -170,6 +170,17 @@ async fn agent_reply_and_outputs_updated_broadcast_to_sse_subscribers() {
         .post(&format!("/api/v1/generations/{gen_id}/outputs-updated"))
         .await;
     resp.assert_status(StatusCode::OK);
+
+    // Unknown generation ids must 404, matching poll/revisions/done behavior.
+    server
+        .post("/api/v1/generations/gen_missing/agent-reply")
+        .json(&json!({ "message": "hi" }))
+        .await
+        .assert_status(StatusCode::NOT_FOUND);
+    server
+        .post("/api/v1/generations/gen_missing/outputs-updated")
+        .await
+        .assert_status(StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

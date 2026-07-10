@@ -158,25 +158,33 @@ pub async fn agent_reply(
     State(state): State<AppState>,
     Path(id): Path<String>,
     Json(input): Json<AgentReplyInput>,
-) -> Json<serde_json::Value> {
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    revisions::review_state(&state.db, &id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
     let ls = loop_state(&state.loops, &id).await;
     let _ = ls.sse_tx.send(LoopEvent {
         kind: "agent-reply",
         payload: json!({ "message": input.message }).to_string(),
     });
-    Json(json!({ "sent": true }))
+    Ok(Json(json!({ "sent": true })))
 }
 
 pub async fn outputs_updated(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Json<serde_json::Value> {
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    revisions::review_state(&state.db, &id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
     let ls = loop_state(&state.loops, &id).await;
     let _ = ls.sse_tx.send(LoopEvent {
         kind: "outputs-updated",
         payload: "{}".into(),
     });
-    Json(json!({ "notified": true }))
+    Ok(Json(json!({ "notified": true })))
 }
 
 pub async fn events(
