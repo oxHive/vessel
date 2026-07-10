@@ -86,6 +86,22 @@ describe('subscribeToEvents', () => {
     expect(store.agentReply).toBe('revised')
   })
 
+  it('ignores malformed agent-reply payload', async () => {
+    const { useGenerationsStore } = await import('./generations')
+    const store = useGenerationsStore()
+    store.subscribeToEvents('gen_1')
+    const es = FakeEventSource.instances[0]
+    es.listeners['agent-reply'](
+      new MessageEvent('agent-reply', { data: JSON.stringify({ message: 'revised' }) }),
+    )
+    expect(store.agentReply).toBe('revised')
+
+    expect(() =>
+      es.listeners['agent-reply'](new MessageEvent('agent-reply', { data: 'not-json' })),
+    ).not.toThrow()
+    expect(store.agentReply).toBe('revised')
+  })
+
   it('closes previous source on resubscribe and on unsubscribe', async () => {
     const { useGenerationsStore } = await import('./generations')
     const store = useGenerationsStore()

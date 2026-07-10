@@ -36,7 +36,11 @@ export const useGenerationsStore = defineStore('generations', () => {
       void fetchOne(id)
     })
     events.addEventListener('agent-reply', (e) => {
-      agentReply.value = JSON.parse((e as MessageEvent).data).message
+      try {
+        agentReply.value = JSON.parse((e as MessageEvent).data).message ?? null
+      } catch {
+        // Malformed SSE payload — ignore; the next agent-reply will update.
+      }
     })
     events.addEventListener('review-done', () => {
       if (current.value) current.value.generation.review_state = 'done'
