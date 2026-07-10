@@ -1,7 +1,13 @@
 use anyhow::Result;
 use libsql::Connection;
 
-const MIGRATIONS: &[(&str, &str)] = &[("001_init", include_str!("../../migrations/001_init.sql"))];
+const MIGRATIONS: &[(&str, &str)] = &[
+    ("001_init", include_str!("../../migrations/001_init.sql")),
+    (
+        "002_feedback_loop",
+        include_str!("../../migrations/002_feedback_loop.sql"),
+    ),
+];
 
 pub async fn run_migrations(conn: &Connection) -> Result<()> {
     conn.execute(

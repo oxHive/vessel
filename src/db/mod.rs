@@ -2,6 +2,7 @@ pub mod feedback;
 pub mod generations;
 pub mod profiles;
 pub mod projects;
+pub mod revisions;
 pub mod schema;
 
 use crate::config::VesselConfig;
