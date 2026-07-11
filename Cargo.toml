@@ -3,19 +3,24 @@ name = "oxvessel"
 version = "0.1.6"
 edition = "2024"
 description = "Developer release announcement tool"
-license = "MIT"
+license = "AGPL-3.0-only"
 # Whitelist for `cargo package`: dashboard/dist is gitignored, and without
 # this cargo publish ships a crate with no dashboard — rust-embed then embeds
 # nothing and the installed binary 404s on every UI route.
 include = [
-    "src/**",
-    "migrations/**",
-    "dashboard/dist/**",
-    "build.rs",
-    "Cargo.toml",
-    "README.md",
-    "LICENSE",
+  "src/**",
+  "migrations/**",
+  "dashboard/dist/**",
+  "build.rs",
+  "Cargo.toml",
+  "README.md",
+  "LICENSE",
 ]
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }vessel-{ target }.tar.gz"
+bin-dir = "vessel"
+pkg-fmt = "tgz"
 
 [[bin]]
 name = "vessel"
