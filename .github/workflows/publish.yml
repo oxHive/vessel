@@ -15,4 +15,5 @@ jobs:
     with:
       package-name: oxvessel
       binary-name: vessel
+      dashboard-dir: dashboard
     secrets: inherit
